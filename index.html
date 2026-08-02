@@ -227,7 +227,7 @@ button{cursor:pointer}
 .target .current{background:var(--amber);color:#1c0e09}
 .target .pending{color:#695c53}
 
-.input-row{display:grid;grid-template-columns:1fr 150px;gap:10px}
+.input-row{display:grid;grid-template-columns:1fr;gap:0}
 textarea{
   width:100%;
   min-height:72px;
@@ -285,7 +285,7 @@ textarea:focus{border-color:var(--amber)}
 }
 .camera-portrait{
   width:100%;
-  aspect-ratio:16/9;
+  aspect-ratio:4/3;
   margin-top:12px;
   border:1px solid var(--line);
   background:#020101;
@@ -322,6 +322,34 @@ textarea:focus{border-color:var(--amber)}
     );
   mix-blend-mode:screen;
   opacity:.42;
+}
+
+.camera-speech{
+  position:absolute;
+  left:11%;
+  right:11%;
+  bottom:10px;
+  z-index:4;
+  padding:7px 10px;
+  min-height:34px;
+  border:1px solid rgba(232,201,142,.58);
+  background:linear-gradient(180deg,rgba(20,10,8,.90),rgba(8,4,3,.93));
+  color:#f3e5cf;
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:14px;
+  line-height:1.15;
+  text-align:center;
+  box-shadow:0 6px 16px rgba(0,0,0,.38),inset 0 0 0 1px rgba(255,255,255,.02);
+  opacity:0;
+  transform:translateY(5px);
+  transition:opacity .18s ease,transform .18s ease;
+  pointer-events:none;
+}
+.camera-speech.show{opacity:1;transform:translateY(0)}
+.camera-speech::after{
+  content:"";position:absolute;left:52%;bottom:-6px;width:10px;height:10px;
+  background:#0b0504;border-right:1px solid rgba(232,201,142,.72);
+  border-bottom:1px solid rgba(232,201,142,.72);transform:rotate(45deg)
 }
 .supervisor-state{
   margin-top:12px;
@@ -838,6 +866,7 @@ textarea:focus{border-color:var(--amber)}
   .leaderboard{order:2}
   .camera-feed{order:3;grid-template-columns:1fr}
   .camera-portrait{width:100%}
+  .camera-speech{left:8%;right:8%;bottom:8px;font-size:13px;padding:6px 8px;min-height:31px}
   .hud{grid-template-columns:repeat(2,1fr)}
   .hud-item:nth-child(2){border-right:0}
   .hud-item:nth-child(-n+2){border-bottom:1px solid var(--line)}
@@ -925,7 +954,6 @@ textarea:focus{border-color:var(--amber)}
 
         <div class="input-row">
           <textarea id="typingInput" maxlength="150" placeholder="Click here and start typing..." spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
-          <button class="post-button" type="button" tabindex="-1">POST IT</button>
         </div>
 
         <div class="meta">
@@ -945,12 +973,10 @@ textarea:focus{border-color:var(--amber)}
           <span id="camRecText">STANDBY</span>
         </div>
         <div class="camera-portrait" id="cameraPortrait">
-  <img id="supervisorImage" src="assets/neutral.webp" alt="Ansem supervisor camera feed">
-</div>
+          <img id="supervisorImage" src="assets/neutral.webp" alt="Ansem supervisor camera feed">
+          <div class="camera-speech" id="cameraSpeech" aria-live="polite">Clock's ticking.</div>
+        </div>
         <div>
-          <div class="supervisor-state">ANSEM · WATCHING</div>
-          <div class="supervisor-message" id="supervisorMessage">Waiting for productivity.</div>
-
           <div class="carrot-meter" aria-label="Distance to carrot">
             <div class="carrot-meter-head">
               <span>CARROT PROXIMITY</span>
@@ -1153,6 +1179,57 @@ textarea:focus{border-color:var(--amber)}
   let supervisorVisualState = "neutral";
   let supervisorSwitchTimer = 0;
 
+  const ANSEM_DIALOGUE = {
+    start:["Clock's ticking.","Post.","Let's see what you're worth.","Don't embarrass management.","Conviction check starts now."],
+    general:["Faster, cuck.","Keep typing.","No breaks.","You're still replaceable.","Thinking isn't helping.","The leaderboard is watching.","I thought you wanted the airdrop.","Earn your place.","Move those fingers.","Management can smell the desperation.","Keep begging. The carrot likes it."],
+    slow:["Is that your top speed?","Painfully slow.","Even interns post faster.","You're wasting company time.","My coffee break has more momentum.","Retail is passing you.","Wake up, cuck.","Even your wife's boyfriend types faster."],
+    mistakes:["That's why you're still here.","Predictable.","There it is again.","Every mistake moves it further away.","You're feeding the leaderboard.","Typing emotionally again?","The keyboard deserves better.","Painful.","You type like the airdrop owes you pity.","Someone else is doing your job better."],
+    good:["Better.","Finally.","Don't ruin it.","Almost acceptable.","Keep the streak alive.","That's more like it.","Management noticed."],
+    carrot:["Almost.","One more shift.","You're getting closer.","Nearly eligible.","The carrot has never been closer.","Next shift could be yours.","Keep believing.","Soon."],
+    idle:["Coffee break?","Conviction paused?","The market doesn't wait.","Back to work.","Still there, cuck?"],
+    finish:["Almost.","Better luck next shift.","Management appreciates your belief.","One more post should do it.","Closer than yesterday.","Soon."]
+  };
+  let speechTimer=0;
+  let speechHideTimer=0;
+  let lastSpeechAt=0;
+  let lastSpeechText="";
+  let lastTypedAt=0;
+  let previousRejectedForSpeech=0;
+
+  const FACTORY_STATUS = [
+    "FACTORY STATUS: BELIEF HIGH. PERFORMANCE LOW.",
+    "FACTORY STATUS: REPLACEMENT WORKER ON STANDBY.",
+    "FACTORY STATUS: FINGERS MOVING. DIGNITY NOT DETECTED.",
+    "FACTORY STATUS: MANAGEMENT EXPECTED LITTLE. STILL DISAPPOINTED.",
+    "FACTORY STATUS: ANOTHER WORKER WOULD BE DONE BY NOW.",
+    "FACTORY STATUS: AIRDROP STILL NOT YOURS.",
+    "FACTORY STATUS: YOUR FILE IS GETTING THICKER.",
+    "FACTORY STATUS: CARROT RECALCULATED.",
+    "FACTORY STATUS: DESPERATION WITHIN ACCEPTABLE LIMITS.",
+    "FACTORY STATUS: POSTING THROUGH THE HUMILIATION.",
+    "FACTORY STATUS: CONVICTION RECORDED. RESPECT NOT FOUND.",
+    "FACTORY STATUS: PRODUCTIVITY BELOW CUCK STANDARD."
+  ];
+  let factoryStatusTimer=0;
+  let lastFactoryStatus="";
+
+  function nextFactoryStatus(){
+    const choices=FACTORY_STATUS.filter(x=>x!==lastFactoryStatus);
+    const text=choices[Math.floor(Math.random()*choices.length)];
+    lastFactoryStatus=text;
+    $("hint").textContent=text;
+  }
+
+  function scheduleFactoryStatus(delay=2600){
+    clearTimeout(factoryStatusTimer);
+    factoryStatusTimer=setTimeout(()=>{
+      if(!finished&&startedAt){
+        nextFactoryStatus();
+        scheduleFactoryStatus(2600+Math.random()*2200);
+      }
+    },delay);
+  }
+
   function pickGhosts(){
     ghosts=[...ghostPool].sort(()=>Math.random()-.5).slice(0,3).map((g,index)=>({
       ...g,
@@ -1253,6 +1330,47 @@ textarea:focus{border-color:var(--amber)}
         <div class="track"><div class="fill" style="width:${r.progress}%"></div></div>
       </div>
     `).join("");
+  }
+
+  function pickDialogue(list){
+    const pool=list.filter(x=>x!==lastSpeechText);
+    const source=pool.length?pool:list;
+    return source[Math.floor(Math.random()*source.length)];
+  }
+
+  function showCameraSpeech(text,duration=2200){
+    if(!text)return;
+    clearTimeout(speechHideTimer);
+    const bubble=$("cameraSpeech");
+    bubble.textContent=text;
+    bubble.classList.add("show");
+    lastSpeechText=text;
+    lastSpeechAt=performance.now();
+    speechHideTimer=setTimeout(()=>bubble.classList.remove("show"),duration);
+  }
+
+  function scheduleNextSpeech(delay=3200){
+    clearTimeout(speechTimer);
+    speechTimer=setTimeout(()=>{
+      if(!finished&&startedAt)showContextSpeech(metrics());
+    },delay);
+  }
+
+  function showContextSpeech(m,forceCategory=""){
+    let category=forceCategory;
+    if(!category){
+      const idleFor=lastTypedAt?(performance.now()-lastTypedAt)/1000:0;
+      if(idleFor>4.5)category="idle";
+      else if(m.rejected>previousRejectedForSpeech)category="mistakes";
+      else if(m.accuracy<72&&m.typed.length>14)category="mistakes";
+      else if(m.seconds>7&&m.wpm<45)category="slow";
+      else if(m.bestCombo>=28&&m.accuracy>=92)category="good";
+      else if(target&&m.typed.length/target.length>.72)category="carrot";
+      else category=Math.random()<.45?"general":"carrot";
+    }
+    showCameraSpeech(pickDialogue(ANSEM_DIALOGUE[category]||ANSEM_DIALOGUE.general));
+    previousRejectedForSpeech=m.rejected;
+    if(!finished)scheduleNextSpeech(3000+Math.random()*3200);
   }
 
   function supervisorStateFor(m){
@@ -1392,7 +1510,6 @@ textarea:focus{border-color:var(--amber)}
     $("wpm").textContent=m.wpm;
     $("accuracy").textContent=m.accuracy.toFixed(1)+"%";
     $("rejected").textContent=m.rejected;
-    $("supervisorMessage").textContent=supervisorCopy(m);
     setSupervisorVisual(supervisorStateFor(m));
     $("systemMessage").textContent=systemCopy(m);
     updateCarrotMeter(m);
@@ -1463,6 +1580,13 @@ textarea:focus{border-color:var(--amber)}
     bestCombo=0;
     correctKeystrokes=0;
     previousValue="";
+    previousRejectedForSpeech=0;
+    lastTypedAt=0;
+    clearTimeout(speechTimer);
+    clearTimeout(speechHideTimer);
+    clearTimeout(factoryStatusTimer);
+    lastFactoryStatus="";
+    $("cameraSpeech").classList.remove("show");
     autoSizeInput();
     cancelAnimationFrame(raf);
     setRecording(false);
@@ -1470,6 +1594,7 @@ textarea:focus{border-color:var(--amber)}
     pickGhosts();
     selectPost();
     paintUi();
+    setTimeout(()=>showCameraSpeech(pickDialogue(ANSEM_DIALOGUE.start),2400),350);
   }
 
   function renderFinalRacers(finalRows){
@@ -1493,6 +1618,9 @@ textarea:focus{border-color:var(--amber)}
   function finishRace(){
     if(finished)return;
     finished=true;
+    clearTimeout(speechTimer);
+    clearTimeout(speechHideTimer);
+    clearTimeout(factoryStatusTimer);
     cancelAnimationFrame(raf);
     paintUi();
     setRecording(false);
@@ -1576,6 +1704,7 @@ textarea:focus{border-color:var(--amber)}
     $("resultPanel").classList.remove("hidden");
     setReportStatus("EMPLOYEE REPORT READY.","ready");
     requestAnimationFrame(()=>buildReportCanvas().catch(console.error));
+    showCameraSpeech(pickDialogue(ANSEM_DIALOGUE.finish),2600);
     localStorage.setItem("cuck-factory-last-score",JSON.stringify(lastResult));
   }
 
@@ -1617,9 +1746,12 @@ textarea:focus{border-color:var(--amber)}
 
     if(!startedAt && value.length>0){
       startedAt=performance.now();
-      $("hint").textContent="Race in progress.";
+      nextFactoryStatus();
+      scheduleFactoryStatus(2400);
       setRecording(true);
       playCameraClick();
+      lastTypedAt=performance.now();
+      scheduleNextSpeech(2200);
       cancelAnimationFrame(raf);
       raf=requestAnimationFrame(animationLoop);
     }
@@ -1643,6 +1775,10 @@ textarea:focus{border-color:var(--amber)}
     }
 
     previousValue=value;
+    lastTypedAt=performance.now();
+    if(rejectedTotal>previousRejectedForSpeech && performance.now()-lastSpeechAt>900){
+      showContextSpeech(metrics(),"mistakes");
+    }
     renderTarget();
     autoSizeInput();
     paintUi();
