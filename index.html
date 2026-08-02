@@ -340,20 +340,439 @@ textarea:focus{border-color:var(--amber)}
   line-height:1.35
 }
 
+.carrot-meter{
+  margin-top:18px;
+  padding-top:14px;
+  border-top:1px solid var(--line-soft);
+}
+.carrot-meter-head{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:center;
+  color:var(--muted);
+  font-size:9px;
+  letter-spacing:.16em;
+}
+.carrot-distance{
+  color:var(--bad);
+  font-weight:700;
+  white-space:nowrap;
+}
+.carrot-track{
+  position:relative;
+  height:76px;
+  margin-top:10px;
+}
+.carrot-line{
+  position:absolute;
+  left:0;
+  right:0;
+  top:47px;
+  border-top:1px dashed #6e5037;
+  opacity:.9;
+}
+.carrot-player{
+  position:absolute;
+  left:0;
+  top:32px;
+  transform:translateX(0);
+  padding:4px 7px;
+  border:1px solid #8f6344;
+  background:#160b08;
+  color:var(--text);
+  font-size:9px;
+  letter-spacing:.08em;
+  transition:left .2s ease-out;
+  z-index:2;
+}
+.carrot-player::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:100%;
+  width:1px;
+  height:13px;
+  background:#8f6344;
+}
+.carrot-icon{
+  position:absolute;
+  right:4px;
+  top:0;
+  width:36px;
+  height:58px;
+  transform:rotate(5deg);
+  z-index:2;
+}
+.carrot-leaves{
+  position:absolute;
+  left:9px;
+  top:0;
+  width:18px;
+  height:16px;
+}
+.carrot-leaves::before,
+.carrot-leaves::after{
+  content:"";
+  position:absolute;
+  bottom:0;
+  width:5px;
+  height:15px;
+  background:#5d7d50;
+  border-radius:70% 70% 20% 20%;
+  transform-origin:bottom center;
+}
+.carrot-leaves::before{
+  left:2px;
+  transform:rotate(-25deg);
+  box-shadow:7px 0 0 #6f8d5f;
+}
+.carrot-leaves::after{
+  right:1px;
+  transform:rotate(24deg);
+}
+.carrot-body{
+  position:absolute;
+  left:6px;
+  top:13px;
+  width:24px;
+  height:43px;
+  clip-path:polygon(7% 0,93% 0,60% 100%,44% 100%);
+  background:
+    linear-gradient(
+      90deg,
+      #a94f1c 0%,
+      #d46b24 20%,
+      var(--carrot-mid,#d46b24) 52%,
+      var(--carrot-gold,#d46b24) 78%,
+      #7f3e18 100%
+    );
+  border:1px solid rgba(168,100,37,.95);
+  box-shadow:
+    inset -5px 0 0 rgba(55,22,7,.22),
+    0 0 7px rgba(207,156,72,var(--gold-glow,.04));
+  transition:background .22s ease, box-shadow .22s ease;
+}
+.carrot-body::before{
+  content:"";
+  position:absolute;
+  inset:3px 3px 4px;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0 7px,
+      rgba(52,22,8,.45) 7px 9px
+    );
+  opacity:.72;
+}
+.carrot-body::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(circle at 72% 18%,rgba(255,229,142,var(--gold-shine,.02)),transparent 24%),
+    linear-gradient(115deg,transparent 0 44%,rgba(255,222,135,var(--gold-shine,.02)) 48%,transparent 55%);
+  mix-blend-mode:screen;
+}
+.carrot-caption{
+  margin-top:2px;
+  color:#9f846c;
+  font-size:8px;
+  letter-spacing:.12em;
+  line-height:1.4;
+}
+.carrot-caption strong{
+  color:#9f846c;
+  font-weight:400;
+}
+
+
 .result-layout{display:grid;grid-template-columns:300px 1fr;gap:12px}
 .result-race,.result-summary{padding:18px}
-.result-summary{text-align:center}
-.result-summary h2{
-  font-family:Georgia,"Times New Roman",serif;
-  font-size:42px;margin:0 0 8px
-}
+.result-summary{text-align:left}
+.result-summary h2{margin:0}
 .result-summary p{color:var(--muted)}
-.result-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0}
-.result-card{border:1px solid var(--line);background:var(--panel-2);padding:14px}
-.result-card small{display:block;color:var(--muted);font-size:10px;margin-bottom:7px}
-.result-card strong{font-family:Georgia,"Times New Roman",serif;font-size:30px}
+
+.result-certificate{
+  border:1px solid #8d6f43;
+  background:#efe4c7;
+  color:#29130f;
+  box-shadow:0 18px 55px rgba(0,0,0,.28);
+  overflow:hidden;
+}
+.result-cert-top,
+.result-cert-bottom{
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  align-items:center;
+  gap:14px;
+  padding:12px 18px;
+  background:#8f211b;
+  color:#f4e7c5;
+  border-bottom:2px solid #c69a41;
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.16em;
+}
+.result-cert-top span:nth-child(2){text-align:center}
+.result-cert-top span:last-child{text-align:right}
+.result-cert-bottom{
+  display:block;
+  text-align:center;
+  border-top:2px solid #c69a41;
+  border-bottom:0;
+  font-size:13px;
+}
+.result-cert-body{
+  display:grid;
+  grid-template-columns:minmax(0,1.55fr) minmax(230px,.85fr);
+  min-height:390px;
+}
+.result-cert-copy{
+  padding:34px 34px 28px;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(98,65,34,.055) 0,
+      rgba(98,65,34,.055) 1px,
+      transparent 1px,
+      transparent 27px
+    ),
+    #efe4c7;
+  border-right:1px solid #b99a66;
+  text-align:center;
+}
+.result-cert-kicker{
+  color:#765b3d;
+  font-size:10px;
+  letter-spacing:.24em;
+  font-weight:700;
+}
+.result-shortfall{
+  margin:22px auto 10px;
+  color:#8f211b;
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:clamp(48px,6.5vw,88px);
+  line-height:.86;
+  letter-spacing:-.04em;
+}
+.result-shortfall small{
+  display:block;
+  margin-top:12px;
+  color:#765b3d;
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:.20em;
+  line-height:1.4;
+}
+.result-carrot-track{
+  position:relative;
+  height:86px;
+  margin:26px auto 22px;
+  max-width:620px;
+}
+.result-carrot-line{
+  position:absolute;
+  left:2%;
+  right:2%;
+  top:52px;
+  border-top:2px solid #9f8463;
+}
+.result-carrot-you{
+  position:absolute;
+  top:34px;
+  padding:5px 9px;
+  background:#28140f;
+  color:#f4e7c5;
+  border:1px solid #8f211b;
+  font-size:9px;
+  letter-spacing:.1em;
+  transform:translateX(-50%);
+}
+.result-carrot-you::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:100%;
+  width:1px;
+  height:15px;
+  background:#8f211b;
+}
+.result-carrot{
+  position:absolute;
+  right:2%;
+  top:3px;
+  width:44px;
+  height:72px;
+  transform:rotate(5deg);
+  --result-gold:.25;
+}
+.result-carrot .result-leaves{
+  position:absolute;
+  left:11px;
+  top:0;
+  width:24px;
+  height:19px;
+}
+.result-carrot .result-leaves::before,
+.result-carrot .result-leaves::after{
+  content:"";
+  position:absolute;
+  bottom:0;
+  width:6px;
+  height:18px;
+  border-radius:70% 70% 20% 20%;
+  background:#668054;
+  transform-origin:bottom center;
+}
+.result-carrot .result-leaves::before{
+  left:3px;
+  transform:rotate(-26deg);
+  box-shadow:9px 0 0 #789364;
+}
+.result-carrot .result-leaves::after{
+  right:2px;
+  transform:rotate(25deg);
+}
+.result-carrot .result-body{
+  position:absolute;
+  left:7px;
+  top:16px;
+  width:30px;
+  height:52px;
+  clip-path:polygon(7% 0,93% 0,60% 100%,44% 100%);
+  background:
+    linear-gradient(
+      100deg,
+      #a9501b 0%,
+      #cf6a22 22%,
+      rgb(
+        calc(210 + (22 * var(--result-gold))),
+        calc(102 + (82 * var(--result-gold))),
+        calc(31 + (54 * var(--result-gold)))
+      ) 54%,
+      rgb(
+        calc(207 + (27 * var(--result-gold))),
+        calc(103 + (101 * var(--result-gold))),
+        calc(29 + (63 * var(--result-gold)))
+      ) 78%,
+      #713715 100%
+    );
+  border:1px solid #9d6726;
+  box-shadow:
+    inset -6px 0 0 rgba(56,23,7,.24),
+    0 0 calc(4px + (12px * var(--result-gold))) rgba(216,171,72,.28);
+}
+.result-carrot .result-body::after{
+  content:"";
+  position:absolute;
+  inset:4px 3px;
+  background:repeating-linear-gradient(
+    to bottom,
+    transparent 0 8px,
+    rgba(58,24,8,.45) 8px 10px
+  );
+}
+.result-cert-score-label{
+  margin-top:20px;
+  color:#765b3d;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.2em;
+}
+.result-cert-score{
+  color:#29130f;
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:72px;
+  line-height:1;
+  margin-top:6px;
+}
+
+.result-cert-data{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:0;
+  max-width:700px;
+  margin:22px auto 0;
+  border-top:1px solid #b99a66;
+  border-bottom:1px solid #b99a66;
+}
+.result-cert-data-item{
+  padding:12px 8px 11px;
+  border-right:1px solid #b99a66;
+}
+.result-cert-data-item:last-child{border-right:0}
+.result-cert-data-item small{
+  display:block;
+  color:#765b3d;
+  font-size:8px;
+  font-weight:700;
+  letter-spacing:.17em;
+  margin-bottom:6px;
+}
+.result-cert-data-item strong{
+  display:block;
+  color:#29130f;
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:24px;
+  line-height:1;
+}
+.result-nearly-line{
+  margin:17px auto 0;
+  color:#8f211b;
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:20px;
+  font-style:italic;
+  line-height:1.25;
+}
+.result-cert-footnote{
+  margin:18px auto 0;
+  max-width:700px;
+  border-top:1px solid #b99a66;
+  padding-top:14px;
+  color:#765b3d;
+  font-size:9px;
+  font-weight:700;
+  letter-spacing:.14em;
+}
+.result-cert-image{
+  position:relative;
+  background:#160a08;
+  min-height:390px;
+}
+.result-cert-image img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center;
+  filter:saturate(.88) contrast(1.02);
+}
+.result-cert-image::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(90deg,rgba(239,228,199,.12),transparent 30%);
+  pointer-events:none;
+}
+
+.result-grid{
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  gap:8px;
+  margin:14px 0;
+}
+.result-card{
+  border:1px solid var(--line);
+  background:var(--panel-2);
+  padding:11px 8px;
+  text-align:center;
+}
+.result-card small{display:block;color:var(--muted);font-size:8px;margin-bottom:6px}
+.result-card strong{font-family:Georgia,"Times New Roman",serif;font-size:22px}
+
 .management-verdict{
-  margin:16px 0;
+  margin:14px 0;
   border-left:3px solid var(--amber);
   background:rgba(45,24,18,.35);
   padding:14px 16px;
@@ -361,8 +780,9 @@ textarea:focus{border-color:var(--amber)}
 }
 .management-verdict small{display:block;color:var(--muted);font-size:9px;letter-spacing:.16em;margin-bottom:7px}
 .management-verdict strong{font-family:Georgia,"Times New Roman",serif;font-size:22px;font-style:italic;font-weight:400}
+
 .share-preview{
-  margin:16px 0;
+  margin:14px 0;
   padding:16px;
   border:1px solid var(--line);
   background:
@@ -374,6 +794,7 @@ textarea:focus{border-color:var(--amber)}
 .share-preview h3{font-family:Georgia,"Times New Roman",serif;font-size:28px;margin:0 0 8px}
 .share-preview .share-score{display:flex;gap:18px;flex-wrap:wrap;color:var(--amber-soft);font-weight:700}
 .share-preview blockquote{margin:14px 0 0;padding:12px;border-left:2px solid var(--line);color:#cdbba2;font-size:12px;line-height:1.5}
+
 .result-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 .final-racer{display:grid;gap:8px;padding:13px 0;border-bottom:1px solid var(--line-soft)}
 .final-racer:last-child{border-bottom:0}
@@ -424,7 +845,13 @@ textarea:focus{border-color:var(--amber)}
   .post-button{min-height:52px}
   .result-layout{grid-template-columns:1fr}
   .result-race{order:2}.result-summary{order:1}
-  .result-grid{grid-template-columns:repeat(2,1fr)}
+  .result-grid{grid-template-columns:repeat(3,1fr)}
+  .result-cert-body{grid-template-columns:1fr}
+  .result-cert-copy{border-right:0;border-bottom:1px solid #b99a66}
+  .result-cert-image{min-height:320px}
+  .result-cert-data{grid-template-columns:repeat(2,1fr)}
+  .result-cert-data-item:nth-child(2){border-right:0}
+  .result-cert-data-item:nth-child(-n+2){border-bottom:1px solid #b99a66}
 }
 </style>
 </head>
@@ -505,6 +932,24 @@ textarea:focus{border-color:var(--amber)}
         <div>
           <div class="supervisor-state">ANSEM · WATCHING</div>
           <div class="supervisor-message" id="supervisorMessage">Waiting for productivity.</div>
+
+          <div class="carrot-meter" aria-label="Distance to carrot">
+            <div class="carrot-meter-head">
+              <span>CARROT PROXIMITY</span>
+              <span class="carrot-distance" id="carrotDistance">11.5 cm</span>
+            </div>
+            <div class="carrot-track">
+              <div class="carrot-line"></div>
+              <div class="carrot-player" id="carrotPlayer">YOU</div>
+              <div class="carrot-icon" id="carrotIcon" aria-hidden="true">
+                <span class="carrot-leaves"></span>
+                <span class="carrot-body"></span>
+              </div>
+            </div>
+            <div class="carrot-caption" id="carrotCaption">
+              PROXIMITY ESTIMATE
+            </div>
+          </div>
         </div>
       </aside>
     </div>
@@ -516,9 +961,74 @@ textarea:focus{border-color:var(--amber)}
         <div class="panel-title">CUCK RACE · FINAL</div>
         <div id="finalRacers"></div>
       </aside>
+
       <div class="result-summary">
-        <h2>SHIFT COMPLETE</h2>
+        <div class="result-certificate">
+          <div class="result-cert-top">
+            <span>ANSEM'S CUCK FACTORY</span>
+            <span id="resultFile">SHIFT FILE</span>
+            <span>CUCKS.MONEY</span>
+          </div>
+
+          <div class="result-cert-body">
+            <div class="result-cert-copy">
+              <div class="result-cert-kicker">YOUR SHIFT HAS BEEN RECORDED</div>
+
+              <div class="result-shortfall">
+                <span id="resultCarrotDistance">0.0 CM</span>
+                <small>SHORT OF THE CARROT</small>
+              </div>
+
+              <div class="result-carrot-track">
+                <div class="result-carrot-line"></div>
+                <div class="result-carrot-you" id="resultCarrotYou">YOU</div>
+                <div class="result-carrot" id="resultCarrot">
+                  <span class="result-leaves"></span>
+                  <span class="result-body"></span>
+                </div>
+              </div>
+
+              <div class="result-cert-score-label">FACTORY SCORE</div>
+              <div class="result-cert-score" id="resultFactoryScoreLarge">0</div>
+
+              <div class="result-cert-data">
+                <div class="result-cert-data-item">
+                  <small>WORDS / MIN</small>
+                  <strong id="resultCertWpm">0</strong>
+                </div>
+                <div class="result-cert-data-item">
+                  <small>ACCURACY</small>
+                  <strong id="resultCertAccuracy">0%</strong>
+                </div>
+                <div class="result-cert-data-item">
+                  <small>REJECTED KEYS</small>
+                  <strong id="resultCertRejected">0</strong>
+                </div>
+                <div class="result-cert-data-item">
+                  <small>BEST COMBO</small>
+                  <strong id="resultCertCombo">0</strong>
+                </div>
+              </div>
+
+              <div class="result-nearly-line" id="resultNearlyLine">
+                So close. One more post may be enough.
+              </div>
+
+              <div class="result-cert-footnote">
+                MANAGEMENT FORECAST: SOON™
+              </div>
+            </div>
+
+            <div class="result-cert-image">
+              <img src="assets/neutral.webp" id="resultSupervisorImage" alt="Ansem supervisor result">
+            </div>
+          </div>
+
+          <div class="result-cert-bottom">SHIFT COMPLETE · ALMOST ELIGIBLE · CONTINUE POSTING</div>
+        </div>
+
         <p id="placement"></p>
+
         <div class="result-grid">
           <div class="result-card"><small>WPM</small><strong id="resultWpm">0</strong></div>
           <div class="result-card"><small>ACCURACY</small><strong id="resultAccuracy">0%</strong></div>
@@ -527,10 +1037,12 @@ textarea:focus{border-color:var(--amber)}
           <div class="result-card"><small>FACTORY SCORE</small><strong id="resultFactoryScore">0</strong></div>
           <div class="result-card"><small>AIRDROP</small><strong id="resultAirdrop">0%</strong></div>
         </div>
+
         <div class="management-verdict">
           <small>MANAGEMENT VERDICT</small>
           <strong id="managementVerdict">Performance recorded.</strong>
         </div>
+
         <div class="share-preview" id="sharePreview">
           <small>SHIFT REPORT PREVIEW</small>
           <h3 id="sharePreviewName">@worker</h3>
@@ -541,6 +1053,7 @@ textarea:focus{border-color:var(--amber)}
           </div>
           <blockquote id="sharePreviewPost"></blockquote>
         </div>
+
         <div class="result-actions">
           <button class="primary" id="shareBtn">SHARE ON X</button>
           <button class="secondary" id="againBtn">WORK ANOTHER SHIFT</button>
@@ -781,12 +1294,73 @@ textarea:focus{border-color:var(--amber)}
   }
 
   function verdictFor(m,place){
-    if(m.accuracy<90) return "Accuracy requires immediate improvement.";
-    if(place===1 && m.wpm>=100) return "Exceptional productivity recorded.";
-    if(place===1) return "Highest output within assigned worker group.";
-    if(m.factoryScore>=7000) return "Strong performance. Continue posting.";
-    if(m.factoryScore>=5000) return "Productivity meets current expectations.";
-    return "Additional shifts are recommended.";
+    if(m.accuracy<45) return "Promising effort detected. One cleaner post could change everything.";
+    if(m.accuracy<70) return "Closer than it looks. Management recommends one more shift.";
+    if(m.accuracy<90) return "Almost compliant. A final improvement may unlock eligibility.";
+    if(place===1 && m.wpm>=100) return "Exceptional momentum. The carrot is nearly within reach.";
+    if(place===1) return "Top worker recorded. Surely the next post is the one.";
+    if(m.factoryScore>=7000) return "Very close. Maintain belief for just one more shift.";
+    if(m.factoryScore>=5000) return "Eligibility is approaching. Do not stop posting now.";
+    return "Progress confirmed. Management expects a breakthrough soon.";
+  }
+
+  function nearlyLineFor(m,place,distance){
+    if(distance<1) return "Practically there. One more post should do it.";
+    if(distance<2.5) return "So close. Management can almost approve it.";
+    if(place===1) return "First place. The next shift could finally unlock the carrot.";
+    if(m.accuracy<50) return "A rough shift, but the signal is improving. Try once more.";
+    if(m.accuracy<80) return "Nearly compliant. One cleaner post may be enough.";
+    if(m.wpm>=90) return "Strong pace. Do not stop now — soon.";
+    return "Progress recorded. Just one more post.";
+  }
+
+  function carrotStateFor(m){
+    if(!startedAt){
+      return {
+        distance:11.5,
+        progress:0,
+        gold:0,
+        caption:"PROXIMITY ESTIMATE"
+      };
+    }
+
+    const completion=target ? Math.min(1,m.typed.length/target.length) : 0;
+    const speed=Math.min(1,m.wpm/120);
+    const accuracy=Math.max(0,Math.min(1,m.accuracy/100));
+
+    const earned=(completion*.60)+(speed*.16)+(accuracy*.24);
+    const penalty=Math.min(.34,(m.rejected/Math.max(1,target.length))*.92);
+    const adjusted=Math.max(0,Math.min(.965,earned-penalty));
+
+    const distance=Math.max(.4,11.5*(1-adjusted));
+    const progress=Math.max(0,Math.min(88,adjusted*88));
+
+    // The carrot becomes progressively more fake-gold, but never fully gold.
+    const gold=Math.max(0,Math.min(.88,adjusted*.92));
+
+    let caption="PROXIMITY ESTIMATE";
+    if(distance<1) caption="ELIGIBILITY PENDING";
+    else if(distance<2.5) caption="ALMOST WITHIN REACH";
+    else if(distance<5) caption="PROXIMITY IMPROVING";
+
+    return {distance,progress,gold,caption};
+  }
+
+  function updateCarrotMeter(m){
+    const state=carrotStateFor(m);
+    $("carrotDistance").textContent=state.distance.toFixed(1)+" cm";
+    $("carrotPlayer").style.left=state.progress+"%";
+    $("carrotCaption").textContent=state.caption;
+
+    const icon=$("carrotIcon");
+    const gold=state.gold;
+    const mid=`rgb(${Math.round(212+(18*gold))},${Math.round(107+(55*gold))},${Math.round(36+(20*gold))})`;
+    const goldTone=`rgb(${Math.round(212+(18*gold))},${Math.round(107+(90*gold))},${Math.round(36+(45*gold))})`;
+
+    icon.style.setProperty("--carrot-mid",mid);
+    icon.style.setProperty("--carrot-gold",goldTone);
+    icon.style.setProperty("--gold-glow",(0.04+(gold*0.22)).toFixed(2));
+    icon.style.setProperty("--gold-shine",(0.02+(gold*0.30)).toFixed(2));
   }
 
   function paintUi(){
@@ -798,6 +1372,7 @@ textarea:focus{border-color:var(--amber)}
     $("supervisorMessage").textContent=supervisorCopy(m);
     setSupervisorVisual(supervisorStateFor(m));
     $("systemMessage").textContent=systemCopy(m);
+    updateCarrotMeter(m);
     renderRacers();
     lastRejected=m.rejected;
   }
@@ -947,7 +1522,26 @@ textarea:focus{border-color:var(--amber)}
     $("resultRejected").textContent=m.rejected;
     $("resultCombo").textContent=m.bestCombo;
     $("resultFactoryScore").textContent=m.factoryScore.toLocaleString();
+    $("resultFactoryScoreLarge").textContent=m.factoryScore.toLocaleString();
     $("resultAirdrop").textContent=m.airdrop+"%";
+    $("resultCertWpm").textContent=m.wpm;
+    $("resultCertAccuracy").textContent=m.accuracy.toFixed(1)+"%";
+    $("resultCertRejected").textContent=m.rejected;
+    $("resultCertCombo").textContent=m.bestCombo;
+
+    const finalCarrot=carrotStateFor(m);
+    $("resultCarrotDistance").textContent=finalCarrot.distance.toFixed(1)+" CM";
+    $("resultCarrotYou").style.left=Math.min(88,finalCarrot.progress)+"%";
+    $("resultCarrot").style.setProperty("--result-gold",finalCarrot.gold.toFixed(2));
+    $("resultNearlyLine").textContent=nearlyLineFor(m,place,finalCarrot.distance);
+    $("resultFile").textContent=$("assignmentNo").textContent.replace("MANAGEMENT MEMO","SHIFT FILE");
+    $("resultSupervisorImage").src=supervisorAssets[
+      m.accuracy<65 ? "horror" :
+      m.accuracy<85 ? "angry" :
+      m.wpm>=110 && m.accuracy>=97 ? "carrot" :
+      m.wpm>=90 && m.accuracy>=95 ? "happy" :
+      "unimpressed"
+    ];
     $("managementVerdict").textContent=verdictFor(m,place);
     $("sharePreviewName").textContent=playerName;
     $("sharePreviewWpm").textContent=m.wpm+" WPM";
