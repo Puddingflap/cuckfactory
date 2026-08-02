@@ -1076,6 +1076,7 @@ textarea:focus{border-color:var(--amber)}
           <button class="primary" id="downloadReportBtn">DOWNLOAD SHIFT REPORT</button>
           <button class="secondary" id="copyReportBtn">COPY REPORT IMAGE</button>
           <button class="secondary" id="shareBtn">POST ON X</button>
+          <button class="secondary" id="challengeBtn">CHALLENGE A CUCK</button>
           <button class="secondary" id="againBtn">WORK ANOTHER SHIFT</button>
         </div>
         <div class="report-status" id="reportStatus" aria-live="polite"></div>
@@ -1994,6 +1995,27 @@ ${lastResult.airdrop}% projected Cuckdrop
 Management says: soon™`;
     setReportStatus("X OPENED. ATTACH OR PASTE YOUR SHIFT REPORT IMAGE.","ready");
     window.open("https://x.com/intent/post?text="+encodeURIComponent(report),"_blank","noopener,noreferrer");
+  };
+
+  $("challengeBtn").onclick=()=>{
+    if(!lastResult)return;
+
+    const carrot=carrotStateFor(lastResult);
+    const hostedGameUrl = location.protocol === "http:" || location.protocol === "https:"
+      ? location.href.split(/[?#]/)[0]
+      : "https://puddingflap.github.io/cuckfactory/";
+
+    const challenge=`I finished my shift at Ansem's Cuck Factory.
+
+I got within ${carrot.distance.toFixed(1)} cm of the carrot.
+
+Think you can get closer? Your shift starts here:
+${hostedGameUrl}
+
+@`;
+
+    setReportStatus("X OPENED. ADD THE WORKER'S HANDLE AFTER @.","ready");
+    window.open("https://x.com/intent/post?text="+encodeURIComponent(challenge),"_blank","noopener,noreferrer");
   };
 
   $("xName").addEventListener("keydown",e=>{if(e.key==="Enter")startRace()});
