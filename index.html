@@ -853,6 +853,24 @@ textarea:focus{border-color:var(--amber)}
   .result-cert-data-item:nth-child(2){border-right:0}
   .result-cert-data-item:nth-child(-n+2){border-bottom:1px solid #b99a66}
 }
+
+.report-status{
+  width:100%;
+  text-align:center;
+  color:var(--muted);
+  font-size:10px;
+  letter-spacing:.08em;
+  min-height:16px;
+  margin-top:2px;
+}
+.report-status.ready{color:var(--good)}
+.report-status.error{color:var(--bad)}
+.result-actions .primary,
+.result-actions .secondary{min-width:190px}
+@media(max-width:760px){
+  .result-actions button{width:100%}
+}
+
 </style>
 </head>
 <body>
@@ -1055,9 +1073,13 @@ textarea:focus{border-color:var(--amber)}
         </div>
 
         <div class="result-actions">
-          <button class="primary" id="shareBtn">SHARE ON X</button>
+          <button class="primary" id="downloadReportBtn">DOWNLOAD SHIFT REPORT</button>
+          <button class="secondary" id="copyReportBtn">COPY REPORT IMAGE</button>
+          <button class="secondary" id="shareBtn">POST ON X</button>
           <button class="secondary" id="againBtn">WORK ANOTHER SHIFT</button>
         </div>
+        <div class="report-status" id="reportStatus" aria-live="polite"></div>
+        <canvas id="reportCanvas" width="1600" height="900" class="hidden" aria-hidden="true"></canvas>
       </div>
     </div>
   </section>
@@ -1425,6 +1447,7 @@ textarea:focus{border-color:var(--amber)}
 
     $("startPanel").classList.add("hidden");
     $("resultPanel").classList.add("hidden");
+    setReportStatus("");
     $("gamePanel").classList.remove("hidden");
     $("typingInput").value="";
     $("typingInput").disabled=false;
@@ -1550,6 +1573,8 @@ textarea:focus{border-color:var(--amber)}
     $("sharePreviewPost").textContent=target;
     $("gamePanel").classList.add("hidden");
     $("resultPanel").classList.remove("hidden");
+    setReportStatus("EMPLOYEE REPORT READY.","ready");
+    requestAnimationFrame(()=>buildReportCanvas().catch(console.error));
     localStorage.setItem("cuck-factory-last-score",JSON.stringify(lastResult));
   }
 
@@ -1631,18 +1656,344 @@ textarea:focus{border-color:var(--amber)}
   $("startBtn").onclick=startRace;
   $("againBtn").onclick=startRace;
 
+
+  function reportFileName(){
+    const fileNo=($("resultFile").textContent||"SHIFT FILE").replace(/[^a-z0-9]+/gi,"-").replace(/^-|-$/g,"").toLowerCase();
+    return `cuck-factory-${fileNo||"shift-report"}.png`;
+  }
+
+  function roundedRect(ctx,x,y,w,h,r){
+    const radius=Math.min(r,w/2,h/2);
+    ctx.beginPath();
+    ctx.moveTo(x+radius,y);
+    ctx.arcTo(x+w,y,x+w,y+h,radius);
+    ctx.arcTo(x+w,y+h,x,y+h,radius);
+    ctx.arcTo(x,y+h,x,y,radius);
+    ctx.arcTo(x,y,x+w,y,radius);
+    ctx.closePath();
+  }
+
+  function fitText(ctx,text,maxWidth,startSize,minSize,fontFamily,weight="400"){
+    let size=startSize;
+    while(size>minSize){
+      ctx.font=`${weight} ${size}px ${fontFamily}`;
+      if(ctx.measureText(text).width<=maxWidth) break;
+      size-=2;
+    }
+    return size;
+  }
+
+  function drawCarrot(ctx,x,y,scale,gold){
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.rotate(0.08);
+    ctx.scale(scale,scale);
+
+    // leaves
+    ctx.strokeStyle="#687f55";
+    ctx.lineWidth=8;
+    ctx.lineCap="round";
+    [[0,-32,-10,-58],[4,-30,4,-62],[9,-30,21,-55]].forEach(p=>{
+      ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(p[2],p[3]);ctx.stroke();
+    });
+
+    const orange=[207,99,31];
+    const fakeGold=[218,174,75];
+    const mix=(a,b,t)=>Math.round(a+(b-a)*t);
+    const body=`rgb(${mix(orange[0],fakeGold[0],gold)},${mix(orange[1],fakeGold[1],gold)},${mix(orange[2],fakeGold[2],gold)})`;
+
+    ctx.fillStyle=body;
+    ctx.strokeStyle="#8d5521";
+    ctx.lineWidth=3;
+    ctx.beginPath();
+    ctx.moveTo(-28,-25);
+    ctx.quadraticCurveTo(0,-38,28,-25);
+    ctx.lineTo(7,67);
+    ctx.quadraticCurveTo(0,81,-7,67);
+    ctx.closePath();
+    ctx.fill();ctx.stroke();
+
+    // wear / orange scratches, so it never becomes fully gold
+    ctx.strokeStyle="rgba(91,45,20,.72)";
+    ctx.lineWidth=3;
+    [-8,12,33].forEach((yy,i)=>{
+      ctx.beginPath();
+      ctx.moveTo(-18+(i*3),yy);
+      ctx.lineTo(12+(i*4),yy+3);
+      ctx.stroke();
+    });
+    ctx.fillStyle="rgba(176,71,24,.88)";
+    [[-13,5,8,12],[5,26,10,16],[-3,48,7,10]].forEach(([xx,yy,w,h])=>ctx.fillRect(xx,yy,w,h));
+    ctx.restore();
+  }
+
+  function loadReportImage(src){
+    return new Promise((resolve,reject)=>{
+      const img=new Image();
+      img.onload=()=>resolve(img);
+      img.onerror=reject;
+      img.src=src;
+    });
+  }
+
+  async function buildReportCanvas(){
+    if(!lastResult) throw new Error("No shift result available.");
+
+    const canvas=$("reportCanvas");
+    const ctx=canvas.getContext("2d");
+    const W=canvas.width, H=canvas.height;
+    const m=lastResult;
+    const carrot=carrotStateFor(m);
+    const reportImage=$("resultSupervisorImage");
+
+    // Background
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle="#0a0605";
+    ctx.fillRect(0,0,W,H);
+
+    // Main paper card
+    const cardX=24, cardY=20, cardW=W-48, cardH=H-40;
+    ctx.fillStyle="#efe4c7";
+    ctx.fillRect(cardX,cardY,cardW,cardH);
+    ctx.strokeStyle="#9b7640";
+    ctx.lineWidth=2;
+    ctx.strokeRect(cardX,cardY,cardW,cardH);
+
+    // Header/footer bars
+    ctx.fillStyle="#8f211b";
+    ctx.fillRect(cardX,cardY,cardW,58);
+    ctx.fillRect(cardX,cardY+cardH-58,cardW,58);
+    ctx.fillStyle="#c69a41";
+    ctx.fillRect(cardX,cardY+56,cardW,3);
+    ctx.fillRect(cardX,cardY+cardH-61,cardW,3);
+
+    // Split
+    const imageW=505;
+    const imageX=cardX+cardW-imageW;
+    const contentX=cardX+56;
+    const contentW=imageX-contentX-48;
+    ctx.strokeStyle="#b99a66";
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(imageX,cardY+59);
+    ctx.lineTo(imageX,cardY+cardH-59);
+    ctx.stroke();
+
+    // Paper lines
+    ctx.strokeStyle="rgba(118,91,61,.12)";
+    ctx.lineWidth=1;
+    for(let yy=cardY+95;yy<cardY+cardH-70;yy+=31){
+      ctx.beginPath();ctx.moveTo(cardX,yy);ctx.lineTo(imageX,yy);ctx.stroke();
+    }
+
+    // Header text
+    ctx.fillStyle="#f4e7c5";
+    ctx.textBaseline="middle";
+    ctx.font="700 16px ui-monospace, monospace";
+    ctx.textAlign="left";
+    ctx.fillText("ANSEM'S CUCK FACTORY",cardX+28,cardY+29);
+    ctx.textAlign="center";
+    ctx.fillText($("resultFile").textContent.toUpperCase(),cardX+cardW/2,cardY+29);
+    ctx.textAlign="right";
+    ctx.fillText("CUCKS.MONEY",cardX+cardW-28,cardY+29);
+
+    // Supervisor image.
+    // Browsers treat images loaded from a local file:// page as a different
+    // security origin. Drawing them onto a canvas can make PNG export fail.
+    // On GitHub Pages the image is same-origin and is included normally.
+    const areaY=cardY+59, areaH=cardH-118;
+    const canSafelyDrawAsset=location.protocol!=="file:";
+    if(canSafelyDrawAsset){
+      try{
+        const img=await loadReportImage(reportImage.currentSrc||reportImage.src);
+        const scale=Math.max(imageW/img.naturalWidth,areaH/img.naturalHeight);
+        const sw=imageW/scale, sh=areaH/scale;
+        const sx=(img.naturalWidth-sw)/2, sy=(img.naturalHeight-sh)/2;
+        ctx.drawImage(img,sx,sy,sw,sh,imageX,areaY,imageW,areaH);
+        const grad=ctx.createLinearGradient(imageX,0,imageX+80,0);
+        grad.addColorStop(0,"rgba(239,228,199,.22)");
+        grad.addColorStop(1,"rgba(239,228,199,0)");
+        ctx.fillStyle=grad;ctx.fillRect(imageX,areaY,90,areaH);
+      }catch(e){
+        console.warn("Supervisor image could not be added to report.",e);
+        ctx.fillStyle="#160a08";
+        ctx.fillRect(imageX,areaY,imageW,areaH);
+      }
+    }else{
+      // Local preview fallback: keeps the report exportable without tainting
+      // the canvas. The real CRT image appears once hosted on GitHub Pages.
+      ctx.fillStyle="#100807";
+      ctx.fillRect(imageX,areaY,imageW,areaH);
+      const localGrad=ctx.createRadialGradient(
+        imageX+imageW/2,areaY+areaH*.38,20,
+        imageX+imageW/2,areaY+areaH*.38,imageW*.65
+      );
+      localGrad.addColorStop(0,"rgba(116,57,33,.30)");
+      localGrad.addColorStop(1,"rgba(0,0,0,0)");
+      ctx.fillStyle=localGrad;
+      ctx.fillRect(imageX,areaY,imageW,areaH);
+
+      ctx.textAlign="center";
+      ctx.fillStyle="#c6aa82";
+      ctx.font="700 17px ui-monospace, monospace";
+      ctx.fillText("CAM 07 · SUPERVISOR RECORD",imageX+imageW/2,areaY+areaH/2-14);
+      ctx.fillStyle="#80695b";
+      ctx.font="400 13px ui-monospace, monospace";
+      ctx.fillText("CRT IMAGE INCLUDED WHEN HOSTED",imageX+imageW/2,areaY+areaH/2+20);
+    }
+
+    // Kicker
+    ctx.textAlign="center";
+    ctx.fillStyle="#765b3d";
+    ctx.font="700 15px ui-monospace, monospace";
+    ctx.fillText("YOUR SHIFT HAS BEEN RECORDED",contentX+contentW/2,cardY+112);
+
+    // Distance
+    ctx.fillStyle="#8f211b";
+    ctx.font="400 112px Georgia, serif";
+    ctx.fillText(carrot.distance.toFixed(1)+" CM",contentX+contentW/2,cardY+214);
+    ctx.fillStyle="#765b3d";
+    ctx.font="400 18px ui-monospace, monospace";
+    ctx.fillText("SHORT OF THE CARROT",contentX+contentW/2,cardY+273);
+
+    // Distance track
+    const lineY=cardY+375;
+    const lineL=contentX+20, lineR=contentX+contentW-20;
+    ctx.strokeStyle="#9f8463";ctx.lineWidth=3;
+    ctx.beginPath();ctx.moveTo(lineL,lineY);ctx.lineTo(lineR,lineY);ctx.stroke();
+
+    const youX=lineL+(lineR-lineL)*(Math.min(88,carrot.progress)/100);
+    ctx.fillStyle="#28140f";
+    ctx.fillRect(youX-35,lineY-28,70,32);
+    ctx.strokeStyle="#8f211b";ctx.strokeRect(youX-35,lineY-28,70,32);
+    ctx.fillStyle="#f4e7c5";ctx.font="700 13px ui-monospace, monospace";
+    ctx.fillText("YOU",youX,lineY-12);
+    ctx.strokeStyle="#8f211b";ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(youX,lineY+4);ctx.lineTo(youX,lineY+26);ctx.stroke();
+
+    drawCarrot(ctx,lineR-8,lineY-12,0.82,carrot.gold);
+
+    // Factory score
+    ctx.fillStyle="#765b3d";
+    ctx.font="700 16px ui-monospace, monospace";
+    ctx.fillText("FACTORY SCORE",contentX+contentW/2,cardY+468);
+    ctx.fillStyle="#29130f";
+    ctx.font="400 84px Georgia, serif";
+    ctx.fillText(m.factoryScore.toLocaleString(),contentX+contentW/2,cardY+535);
+
+    // Data row
+    const dataY=cardY+574, dataH=94;
+    ctx.strokeStyle="#b99a66";ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(contentX,dataY);ctx.lineTo(contentX+contentW,dataY);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(contentX,dataY+dataH);ctx.lineTo(contentX+contentW,dataY+dataH);ctx.stroke();
+
+    const labels=["WORDS / MIN","ACCURACY","REJECTED KEYS","BEST COMBO"];
+    const values=[String(m.wpm),m.accuracy.toFixed(1)+"%",String(m.rejected),String(m.bestCombo)];
+    const cellW=contentW/4;
+    for(let i=0;i<4;i++){
+      if(i>0){
+        ctx.beginPath();ctx.moveTo(contentX+i*cellW,dataY);ctx.lineTo(contentX+i*cellW,dataY+dataH);ctx.stroke();
+      }
+      const cx=contentX+(i+.5)*cellW;
+      ctx.fillStyle="#765b3d";ctx.font="700 11px ui-monospace, monospace";
+      ctx.fillText(labels[i],cx,dataY+28);
+      ctx.fillStyle="#29130f";ctx.font="700 33px Georgia, serif";
+      ctx.fillText(values[i],cx,dataY+64);
+    }
+
+    // Near-miss message
+    const msg=nearlyLineFor(m,m.place,carrot.distance);
+    const msgSize=fitText(ctx,msg,contentW-50,31,20,"Georgia, serif","400");
+    ctx.fillStyle="#8f211b";
+    ctx.font=`italic ${msgSize}px Georgia, serif`;
+    ctx.fillText(msg,contentX+contentW/2,cardY+714);
+
+    ctx.strokeStyle="#b99a66";
+    ctx.beginPath();ctx.moveTo(contentX,cardY+747);ctx.lineTo(contentX+contentW,cardY+747);ctx.stroke();
+    ctx.fillStyle="#765b3d";
+    ctx.font="700 12px ui-monospace, monospace";
+    ctx.fillText("MANAGEMENT FORECAST: SOON™",contentX+contentW/2,cardY+779);
+
+    // Footer
+    ctx.fillStyle="#f4e7c5";
+    ctx.font="700 18px ui-monospace, monospace";
+    ctx.fillText("SHIFT COMPLETE · ALMOST ELIGIBLE · CONTINUE POSTING",cardX+cardW/2,cardY+cardH-29);
+
+    return canvas;
+  }
+
+  async function reportBlob(){
+    const canvas=await buildReportCanvas();
+    return await new Promise((resolve,reject)=>{
+      canvas.toBlob(blob=>blob?resolve(blob):reject(new Error("Could not create PNG.")),"image/png",0.96);
+    });
+  }
+
+  function setReportStatus(message,type=""){
+    const el=$("reportStatus");
+    el.textContent=message;
+    el.className="report-status"+(type?` ${type}`:"");
+  }
+
+  $("downloadReportBtn").onclick=async()=>{
+    try{
+      setReportStatus("PRINTING EMPLOYEE REPORT...");
+      const blob=await reportBlob();
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a");
+      a.href=url;
+      a.download=reportFileName();
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),1200);
+      setReportStatus("SHIFT REPORT DOWNLOADED.","ready");
+    }catch(err){
+      console.error(err);
+      setReportStatus(location.protocol==="file:" ? "LOCAL EXPORT FAILED. TRY THE HOSTED GITHUB PAGES VERSION." : "REPORT GENERATION FAILED.","error");
+    }
+  };
+
+  $("copyReportBtn").onclick=async()=>{
+    try{
+      setReportStatus("PREPARING REPORT IMAGE...");
+      const blob=await reportBlob();
+
+      // Clipboard image writing requires HTTPS (or localhost) and browser support.
+      if(window.isSecureContext && navigator.clipboard && typeof ClipboardItem!=="undefined"){
+        await navigator.clipboard.write([new ClipboardItem({"image/png":blob})]);
+        setReportStatus("REPORT IMAGE COPIED. PASTE IT INTO X.","ready");
+        return;
+      }
+
+      // Local file preview and unsupported browsers: download instead.
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a");
+      a.href=url;
+      a.download=reportFileName();
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),1200);
+      setReportStatus("IMAGE COPY NEEDS HTTPS. REPORT DOWNLOADED INSTEAD.","ready");
+    }catch(err){
+      console.error(err);
+      setReportStatus("REPORT GENERATION FAILED. TEST THE HOSTED GITHUB PAGES VERSION.","error");
+    }
+  };
+
   $("shareBtn").onclick=()=>{
     if(!lastResult)return;
-    const report=`${lastResult.name} completed a posting shift at Ansem's Cuck Factory.
+    const carrot=carrotStateFor(lastResult);
+    const report=`I finished another shift at Ansem's Cuck Factory.
 
-${lastResult.wpm} WPM · ${lastResult.accuracy.toFixed(1)}% accuracy
-Factory Score: ${lastResult.factoryScore.toLocaleString()}
-Accuracy-adjusted finish: #${lastResult.place} of 4
-Projected Airdrop: ${lastResult.airdrop}%
+${lastResult.factoryScore.toLocaleString()} Factory Score
+${carrot.distance.toFixed(1)} cm short of the carrot
+${lastResult.airdrop}% projected Cuckdrop
 
-"${target}"`;
-    const text=report.length<=280?report:report.slice(0,277)+"...";
-    window.open("https://x.com/intent/post?text="+encodeURIComponent(text),"_blank","noopener,noreferrer");
+Management says: soon™`;
+    setReportStatus("X OPENED. ATTACH OR PASTE YOUR SHIFT REPORT IMAGE.","ready");
+    window.open("https://x.com/intent/post?text="+encodeURIComponent(report),"_blank","noopener,noreferrer");
   };
 
   $("xName").addEventListener("keydown",e=>{if(e.key==="Enter")startRace()});
