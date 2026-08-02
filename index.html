@@ -60,14 +60,25 @@ button{cursor:pointer}
   align-items:center;
   padding:18px 22px;
 }
-.brand h1{
-  margin:0;
-  font-family:Georgia,"Times New Roman",serif;
-  font-size:clamp(30px,4vw,46px);
-  letter-spacing:.02em;
-  font-weight:700;
+.brand{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
 }
-.brand p{margin:6px 0 0;color:var(--muted);font-size:12px;letter-spacing:.08em}
+.brand-lockup{
+  display:block;
+  width:min(430px,100%);
+  height:auto;
+  object-fit:contain;
+  object-position:left center;
+}
+.brand p{
+  margin:8px 0 0 12px;
+  color:var(--muted);
+  font-size:12px;
+  letter-spacing:.08em
+}
 .header-actions{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
 .leader-link{
   border:0;
@@ -123,7 +134,7 @@ button{cursor:pointer}
 .game-panel,.result-panel{padding:12px}
 .game-grid{
   display:grid;
-  grid-template-columns:270px minmax(0,1fr) 230px;
+  grid-template-columns:270px minmax(0,1fr) 320px;
   gap:12px;
   align-items:stretch;
 }
@@ -273,36 +284,44 @@ textarea:focus{border-color:var(--amber)}
   color:var(--muted);font-size:9px;letter-spacing:.15em
 }
 .camera-portrait{
-  height:300px;
+  width:100%;
+  aspect-ratio:16/9;
   margin-top:12px;
   border:1px solid var(--line);
-  background:
-    linear-gradient(180deg,rgba(255,255,255,.015),rgba(0,0,0,.25)),
-    radial-gradient(ellipse at 50% 28%,#5d2a22 0 15%,transparent 16%),
-    radial-gradient(ellipse at 50% 43%,#8b583a 0 18%,transparent 19%),
-    linear-gradient(90deg,transparent 24%,#3c1c18 25% 75%,transparent 76%);
+  background:#020101;
   position:relative;
   overflow:hidden;
+  box-shadow:
+    inset 0 0 28px rgba(0,0,0,.75),
+    0 0 18px rgba(116,57,33,.08);
 }
-.camera-portrait::before{
-  content:"";
-  position:absolute;
-  left:29%;right:29%;top:7%;
-  height:28%;
-  background:linear-gradient(#54251f,#25100e);
-  border-radius:48% 48% 18% 18%;
-  box-shadow:0 7px 0 #773a31;
+.camera-portrait img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center;
+  filter:brightness(.93) contrast(1.04);
+}
+.camera-portrait.is-switching img{
+  filter:brightness(.78) contrast(1.18);
 }
 .camera-portrait::after{
-  content:"ANSEM";
+  content:"";
   position:absolute;
-  inset:auto 0 18px;
-  text-align:center;
-  color:#d6a25a;
-  font-family:Georgia,"Times New Roman",serif;
-  font-size:24px;
-  letter-spacing:.18em;
-  opacity:.75
+  inset:0;
+  pointer-events:none;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.018),transparent 22%,rgba(0,0,0,.12)),
+    repeating-linear-gradient(
+      to bottom,
+      rgba(255,255,255,.025) 0,
+      rgba(255,255,255,.025) 1px,
+      transparent 1px,
+      transparent 4px
+    );
+  mix-blend-mode:screen;
+  opacity:.42;
 }
 .supervisor-state{
   margin-top:12px;
@@ -381,13 +400,15 @@ textarea:focus{border-color:var(--amber)}
 @media(max-width:1050px){
   .game-grid{grid-template-columns:240px minmax(0,1fr)}
   .camera-feed{grid-column:1/-1;display:grid;grid-template-columns:210px 1fr;gap:14px}
-  .camera-portrait{height:210px;margin-top:0}
+  .camera-portrait{margin-top:0}
   .camera-top{grid-column:1/-1}
   .supervisor-state,.supervisor-message{align-self:start}
 }
 @media(max-width:760px){
   body{padding:7px}
   .header{grid-template-columns:1fr}
+  .brand-lockup{width:min(390px,100%)}
+  .brand p{margin-left:4px;font-size:10px;line-height:1.5}
   .header-actions{order:3}
   .camera-status{border-left:0;padding-left:0;text-align:left}
   .start-panel{grid-template-columns:1fr}
@@ -395,7 +416,7 @@ textarea:focus{border-color:var(--amber)}
   .race{order:1}
   .leaderboard{order:2}
   .camera-feed{order:3;grid-template-columns:1fr}
-  .camera-portrait{height:230px}
+  .camera-portrait{width:100%}
   .hud{grid-template-columns:repeat(2,1fr)}
   .hud-item:nth-child(2){border-right:0}
   .hud-item:nth-child(-n+2){border-bottom:1px solid var(--line)}
@@ -411,7 +432,7 @@ textarea:focus{border-color:var(--amber)}
 <div class="app">
   <header class="header frame">
     <div class="brand">
-      <h1>ANSEM'S CUCK FACTORY</h1>
+      <img class="brand-lockup" src="assets/cuck-factory-logo.png" alt="Ansem's Cuck Factory">
       <p>DEPARTMENT OF VOLUNTARY LABOUR · MANDATORY POSTING TERMINAL</p>
     </div>
     <div class="header-actions">
@@ -478,7 +499,9 @@ textarea:focus{border-color:var(--amber)}
           <span>CAM 04 · SUPERVISOR</span>
           <span id="camRecText">STANDBY</span>
         </div>
-        <div class="camera-portrait" aria-label="Temporary supervisor asset placeholder"></div>
+        <div class="camera-portrait" id="cameraPortrait">
+  <img id="supervisorImage" src="assets/neutral.webp" alt="Ansem supervisor camera feed">
+</div>
         <div>
           <div class="supervisor-state">ANSEM · WATCHING</div>
           <div class="supervisor-message" id="supervisorMessage">Waiting for productivity.</div>
@@ -577,6 +600,22 @@ textarea:focus{border-color:var(--amber)}
   let bestCombo = 0;
   let correctKeystrokes = 0;
   let previousValue = "";
+
+  const supervisorAssets = {
+    neutral:"assets/neutral.webp",
+    smug:"assets/smug.webp",
+    thinking:"assets/thinking.webp",
+    surprised:"assets/surprised.webp",
+    unimpressed:"assets/unimpressed.webp",
+    angry:"assets/angry.webp",
+    arrogant:"assets/arrogant.webp",
+    happy:"assets/happy.webp",
+    carrot:"assets/carrot.webp",
+    horror:"assets/horror.webp",
+    static:"assets/static.webp"
+  };
+  let supervisorVisualState = "neutral";
+  let supervisorSwitchTimer = 0;
 
   function pickGhosts(){
     ghosts=[...ghostPool].sort(()=>Math.random()-.5).slice(0,3).map((g,index)=>({
@@ -680,6 +719,47 @@ textarea:focus{border-color:var(--amber)}
     `).join("");
   }
 
+  function supervisorStateFor(m){
+    if(!startedAt) return "neutral";
+    if(m.accuracy<65 && m.typed.length>18) return "horror";
+    if(m.accuracy<82 && m.typed.length>10) return "angry";
+    if(m.rejected>lastRejected) return "thinking";
+    if(m.accuracy<92 && m.typed.length>12) return "unimpressed";
+    if(m.wpm>=120 && m.bestCombo>=45) return "carrot";
+    if(m.wpm>=100 && m.accuracy>=97) return "happy";
+    if(m.wpm>=85 && m.accuracy>=95) return "smug";
+    if(m.seconds>10 && m.wpm<45) return "arrogant";
+    return "neutral";
+  }
+
+  function setSupervisorVisual(nextState, immediate=false){
+    if(!supervisorAssets[nextState]) nextState="neutral";
+    if(nextState===supervisorVisualState && !immediate) return;
+
+    clearTimeout(supervisorSwitchTimer);
+    const portrait=$("cameraPortrait");
+    const image=$("supervisorImage");
+
+    if(immediate){
+      image.src=supervisorAssets[nextState];
+      supervisorVisualState=nextState;
+      portrait.classList.remove("is-switching");
+      return;
+    }
+
+    // Record the requested state immediately. Otherwise paintUi() calls this
+    // every animation frame, keeps clearing the timeout and leaves the CRT
+    // permanently stuck on static.
+    supervisorVisualState=nextState;
+    portrait.classList.add("is-switching");
+    image.src=supervisorAssets.static;
+
+    supervisorSwitchTimer=setTimeout(()=>{
+      image.src=supervisorAssets[nextState];
+      portrait.classList.remove("is-switching");
+    },140);
+  }
+
   function supervisorCopy(m){
     if(!startedAt) return "Waiting for productivity.";
     if(m.rejected>lastRejected) return "Correction required.";
@@ -716,6 +796,7 @@ textarea:focus{border-color:var(--amber)}
     $("accuracy").textContent=m.accuracy.toFixed(1)+"%";
     $("rejected").textContent=m.rejected;
     $("supervisorMessage").textContent=supervisorCopy(m);
+    setSupervisorVisual(supervisorStateFor(m));
     $("systemMessage").textContent=systemCopy(m);
     renderRacers();
     lastRejected=m.rejected;
@@ -786,6 +867,7 @@ textarea:focus{border-color:var(--amber)}
     autoSizeInput();
     cancelAnimationFrame(raf);
     setRecording(false);
+    setSupervisorVisual("neutral",true);
     pickGhosts();
     selectPost();
     paintUi();
@@ -818,6 +900,12 @@ textarea:focus{border-color:var(--amber)}
     $("typingInput").disabled=true;
 
     const m=metrics();
+
+    if(m.accuracy<65) setSupervisorVisual("horror");
+    else if(m.accuracy<85) setSupervisorVisual("angry");
+    else if(m.wpm>=110 && m.accuracy>=97) setSupervisorVisual("carrot");
+    else if(m.wpm>=90 && m.accuracy>=95) setSupervisorVisual("happy");
+    else setSupervisorVisual("unimpressed");
 
     // Final race position is accuracy-adjusted.
     // Typing the full length quickly with many mistakes can no longer win.
